@@ -9,7 +9,7 @@
     A5 - AIN2
     DAC - PMWA (speed left)
 */
-int PWM_L = DAC1;
+int PWM_L = A6;
 int AIN2 = A5;
 int AIN1 = A4;
 int STBY = A3;
@@ -46,12 +46,11 @@ void setup()
 void loop()
 {
   if (_new_command) {
-    digitalWrite(AIN2, HIGH);
-    analogWrite(PWM_L, map(100,0,100,0,255) );
-    delay(3000);
+    forward();
+    delay(1000);
     _new_command = false;
   } else {
-    digitalWrite(AIN2, LOW);
+    stop();
   }
 }
 
@@ -63,4 +62,30 @@ int test(String input)
   } else {
     return 1;
   }
+}
+
+void forward()
+{
+  digitalWrite(BIN2, HIGH);
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(PWM_R, HIGH);
+  digitalWrite(PWM_L, HIGH);
+}
+
+void reverse()
+{
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(PWM_R, HIGH);
+  digitalWrite(PWM_L, HIGH);
+}
+
+void stop()
+{
+  digitalWrite(BIN2, LOW);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(PWM_R, LOW);
+  digitalWrite(PWM_L, LOW);
 }
