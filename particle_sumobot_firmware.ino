@@ -1,24 +1,21 @@
-/*
-    A0 - PWMB (speed right)
-    A1 - BIN2 (direction bits)
-    A2 - BIN1
-
-    A3 - /STBY (motor enable)
-
-    A4 - AIN1 (direction bits)
-    A5 - AIN2
-    DAC - PMWA (speed left)
-*/
+/* Motors */
 int PWM_L = A6;
-int AIN2 = A5;
-int AIN1 = A4;
+int AIN1 = A5;
+int AIN2 = A4;
 int STBY = A3;
-int BIN1 = A2;
-int BIN2 = A1;
+int BIN2 = A2;
+int BIN1 = A1;
 int PWM_R = A0;
-int DEBUG_LED = D7;
-bool _new_command = false;
 
+/* Reflective Sensor*/
+int SENSE_LED = D7;
+int SENSE_PWR = D6;
+int SENSE_READ = A7;
+
+/* Control */
+int full_rotation = 2400;
+int _activated = 0;
+int reading = 0;
 
 void setup()
 {
@@ -29,7 +26,9 @@ void setup()
   pinMode(BIN1, OUTPUT);
   pinMode(BIN2, OUTPUT);
   pinMode(PWM_R, OUTPUT);
-  pinMode(DEBUG_LED, OUTPUT);
+  pinMode(SENSE_LED, OUTPUT);
+  pinMode(SENSE_PWR, OUTPUT);
+  pinMode(SENSE_READ, INPUT);
 
   digitalWrite(PWM_L, LOW);
   digitalWrite(AIN2, LOW);
@@ -38,36 +37,52 @@ void setup()
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, LOW);
   digitalWrite(PWM_R, LOW);
-  digitalWrite(DEBUG_LED, LOW);
+  digitalWrite(SENSE_LED, HIGH);
+  digitalWrite(SENSE_PWR, HIGH);
 
-  Particle.function("test", test);
+  Particle.function("active", active);
+  Particle.function("read", readSensor);
 }
 
 void loop()
 {
-  if (_new_command) {
-    forward();
-    delay(1000);
-    _new_command = false;
+  if (_activated > 0) {
+    reading = analogRead(SENSE_READ);
+    if (reading >= 3500) {
+      forward();
+    } else {
+      reverse();
+      delay(100);
+      if ((reading % 2) == 1) {
+        left();
+      } else {
+        right();
+      }
+      delay(random(800, 1600));
+      forward();
+    }
   } else {
     stop();
   }
 }
 
-int test(String input)
+int active(String activate)
 {
-  if (input == "go") {
-    _new_command = true;
-    return 0;
-  } else {
-    return 1;
-  }
+  _activated = activate.toInt();
+  return 0;
+}
+
+int readSensor(String read)
+{
+  return reading;
 }
 
 void forward()
 {
   digitalWrite(BIN2, HIGH);
+  digitalWrite(BIN1, LOW);
   digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
   digitalWrite(PWM_R, HIGH);
   digitalWrite(PWM_L, HIGH);
 }
@@ -75,7 +90,9 @@ void forward()
 void reverse()
 {
   digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
   digitalWrite(AIN2, HIGH);
+  digitalWrite(AIN1, LOW);
   digitalWrite(PWM_R, HIGH);
   digitalWrite(PWM_L, HIGH);
 }
@@ -88,4 +105,24 @@ void stop()
   digitalWrite(AIN2, LOW);
   digitalWrite(PWM_R, LOW);
   digitalWrite(PWM_L, LOW);
+}
+
+void left()
+{
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(PWM_R, HIGH);
+  digitalWrite(PWM_L, HIGH);
+}
+
+void right()
+{
+  digitalWrite(BIN2, HIGH);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(AIN1, LOW);
+  digitalWrite(PWM_R, HIGH);
+  digitalWrite(PWM_L, HIGH);
 }
